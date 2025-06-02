@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Valura V‑Suite Chat</title>
+    <!-- Space Grotesk font -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet" />
+    <!-- Tailwind v3 – utility‑first CSS framework -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              brand:  '#05A049',
+              accent: '#A855F7',
+              neon:   '#EC4899',
+              base:   '#15162b',
+              background: '#15162b',
+            },
+            fontFamily: {
+              sans: ['Space Grotesk', 'ui-sans-serif', 'system-ui'],
+            },
+            boxShadow: {
+              card: '0 4px 35px -5px rgba(168,85,247,0.15)',
+              '2xl': '0 8px 40px 0 rgba(168,85,247,0.25)',
+            },
+          },
+        },
+      };
+    </script>
+    <!-- Markdown renderer -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- 3‑D / motion libraries (all MIT‑licensed & free) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.globe.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.7.0/vanilla-tilt.min.js"></script>
+    <style>
+      html, body { height: 100%; }
+      body {
+        min-height: 100vh;
+        font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+        background: radial-gradient(ellipse at 50% 0%, #0d0d11 0%, #111122 60%, #15162b 100%) !important;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+      }
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background: url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
+        opacity: 0.10;
+      }
+      #heroCanvasWrap {
+        position: relative;
+        height: 45vh;
+        max-height: 55vh;
+        min-height: 260px;
+        border-radius: 1.5rem;
+        overflow: hidden;
+        box-shadow: 0 8px 40px 0 rgba(168,85,247,0.25);
+        margin: 0 auto;
+        width: 100%;
+        max-width: 900px;
+        background: transparent;
+      }
+      @media (min-width: 768px) {
+        #heroCanvasWrap { height: 55vh; }
+      }
+      #heroCanvasWrap::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        pointer-events: none;
+        box-shadow: 0 0 60px 10px #A855F7, 0 0 0 2px #A855F7AA;
+        z-index: 2;
+        mix-blend-mode: lighten;
+        opacity: 0.3;
+      }
+      #hero h1 {
+        z-index: 10;
+        color: #fff;
+        font-size: 2.2rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        text-shadow: 0 2px 16px #A855F7, 0 1px 0 #000;
+      }
+      #chat-panel {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: 96vw;
+        margin: 0 auto;
+        z-index: 20;
+        top: calc(45vh - 80px);
+        box-shadow: 0 8px 40px 0 rgba(168,85,247,0.25);
+      }
+      @media (min-width: 768px) {
+        #chat-panel {
+          max-width: 900px;
+          top: calc(55vh - 110px);
+        }
+      }
+      .glass {
+        background: rgba(255,255,255,0.10);
+        backdrop-filter: blur(24px);
+        border-radius: 1.5rem;
+        box-shadow: 0 8px 40px 0 rgba(168,85,247,0.25);
+        border: 1px solid rgba(255,255,255,0.10);
+      }
+      .markdown-body table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      .markdown-body th, .markdown-body td {
+        border: 1px solid #a855f7;
+        padding: 8px;
+      }
+      .markdown-body th {
+        background-color: #a855f7cc;
+        color: #fff;
+      }
+      .markdown-body code {
+        background: #22223b;
+        color: #A855F7;
+        border-radius: 0.25rem;
+        padding: 0.1em 0.4em;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen flex flex-col bg-base text-white font-sans selection:bg-accent/30 relative">
+    <!-- Top bar -->
+    <header class="w-full flex items-center h-16 px-8 bg-transparent text-white text-xl font-bold tracking-wide" style="letter-spacing:0.04em;">
+      <span>V-Suite Agents</span>
+    </header>
+    <section id="layout"
+      class="w-full mx-auto px-6 pt-4
+             grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16
+             items-start max-w-none min-h-[calc(100vh-4rem)]">
+      <!-- Hero (left) -->
+      <div id="heroWrap"
+        class="relative h-[50vh] lg:h-[70vh] w-full overflow-hidden rounded-3xl ring-1 ring-white/10">
+        <div id="heroCanvasWrap" class="relative w-full h-full">
+          <iframe 
+            src="https://my.spline.design/robotfollowcursorforlandingpage-G8PLKWJPdtzROA5T7QuZxUJE/" 
+            frameborder="0" 
+            class="absolute inset-0 w-full h-full object-cover"
+            allowfullscreen
+          ></iframe>
+          <h1 class="absolute inset-x-0 top-6 text-center text-3xl md:text-4xl font-bold tracking-tight pointer-events-none select-none">
+            Valura V‑Suite Chat
+          </h1>
+        </div>
+      </div>
+      <!-- Chat (right) -->
+      <div id="chatPanel" class="w-full h-full flex flex-col bg-white/10 backdrop-blur-xl shadow-2xl ring-1 ring-white/10 rounded-3xl">
+        <div id="chat-messages" role="log" aria-live="polite" class="flex-1 overflow-y-auto p-6 space-y-4"></div>
+        <footer class="p-4 border-t border-white/10 bg-white/5 backdrop-blur-lg">
+          <div class="flex gap-3">
+            <input
+              id="message-input"
+              type="text"
+              placeholder="Type your message…"
+              class="flex-1 px-4 py-3 rounded-full border border-accent/30 bg-base/60 text-white placeholder:text-accent/60 focus:outline-none focus:ring-2 focus:ring-accent/60"
+            />
+            <button
+              id="send-btn"
+              class="shrink-0 px-6 py-3 rounded-full bg-brand text-white font-semibold hover:bg-brand/80 transition-colors"
+              onclick="sendMessage()"
+            >
+              Send
+            </button>
+          </div>
+        </footer>
+      </div>
+    </section>
+
+    <script>
+      // Vanilla‑Tilt (applies to hero only)
+      VanillaTilt.init(document.querySelector('#heroWrap'), { max: 6, speed: 500, glare: true, 'max-glare': 0.25 });
+
+      // Bubble helper
+      function bubbleTemplate(html, additional) {
+        return `<div class="max-w-[75%] px-4 py-3 text-sm rounded-xl shadow-sm ${additional}">${html}</div>`;
+      }
+      function addMessage(content, type = "bot") {
+        const log = document.getElementById("chat-messages");
+        let html;
+        if (type === "user") {
+          html = bubbleTemplate(content, "ml-auto bg-brand/10 text-brand");
+        } else if (type === "tool") {
+          html = bubbleTemplate(`<div class='italic markdown-body'>${marked.parse(content)}</div>`, "bg-accent/10 border border-accent/30 text-accent");
+        } else {
+          html = bubbleTemplate(`<div class='markdown-body'>${marked.parse(content)}</div>`, "bg-white/10 border border-white/10 text-white");
+        }
+        log.insertAdjacentHTML("beforeend", html);
+        log.scrollTop = log.scrollHeight;
+      }
+      function addSpinner() {
+        const log = document.getElementById("chat-messages");
+        const sp = `<div id="spinner-message" class="max-w-[75%] px-4 py-3 rounded-xl shadow-sm bg-white/10 border border-white/10"><div class="w-8 h-8 mx-auto border-4 border-accent/30 border-t-brand rounded-full animate-spin"></div></div>`;
+        log.insertAdjacentHTML("beforeend", sp);
+        log.scrollTop = log.scrollHeight;
+      }
+      function removeSpinner() {
+        document.getElementById("spinner-message")?.remove();
+      }
+      let sessionId = null;
+      function sendMessage() {
+        const input = document.getElementById("message-input");
+        const msg = input.value.trim();
+        if (!msg) return;
+        addMessage(msg, "user");
+        input.value = "";
+        addSpinner();
+        const es = new EventSourcePolyfill("/api/chat/stream", {
+          headers: { "Content-Type": "application/json" },
+          payload: JSON.stringify({ message: msg, session_id: sessionId }),
+        });
+        const chunks = [];
+        es.onmessage = (e) => {
+          if (!e.data) return;
+          chunks.push(JSON.parse(e.data));
+        };
+        es.onerror = () => {
+          removeSpinner();
+          addMessage("Sorry, there was an error processing your request.");
+          es.close();
+        };
+        es.onend = () => {
+          removeSpinner();
+          if (chunks.length) {
+            if (chunks.length > 1) {
+              addMessage(chunks[0].content, "tool");
+              addMessage(chunks.at(-1).content);
+            } else {
+              addMessage(chunks[0].content);
+            }
+          }
+        };
+        es._onStreamEnd = () => es.onend?.();
+      }
+      // Enter‑to‑send
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && document.activeElement.id === "message-input") {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+      // EventSource polyfill with POST support (unchanged core logic)
+      class EventSourcePolyfill {
+        constructor(url, opts) {
+          this.url = url;
+          this.opts = opts;
+          this.onmessage = null;
+          this.onerror = null;
+          this.onend = null;
+          this._onStreamEnd = null;
+          this.init();
+        }
+        init() {
+          fetch(this.url, {
+            method: "POST",
+            headers: this.opts.headers,
+            body: this.opts.payload,
+          }).then((res) => {
+            const rdr = res.body.getReader();
+            const dec = new TextDecoder();
+            let buf = "";
+            const read = () => {
+              rdr.read().then(({ done, value }) => {
+                if (done) return this._onStreamEnd?.();
+                buf += dec.decode(value, { stream: true });
+                const parts = buf.split("\n\n");
+                buf = parts.pop();
+                parts.forEach((p) => {
+                  if (p.startsWith("data: ")) this.onmessage?.({ data: p.slice(6) });
+                });
+                read();
+              });
+            };
+            read();
+          });
+        }
+        close() {}
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,7 @@
+agno
+openai
+yfinance
+fastapi
+uvicorn
+jinja2
+aiofiles
