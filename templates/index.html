@@ -111,6 +111,7 @@
       }
       #chat-panel {
         position: absolute;
+        overflow: scroll;
         left: 50%;
         transform: translateX(-50%);
         width: 100%;
@@ -119,11 +120,33 @@
         z-index: 20;
         top: calc(45vh - 80px);
         box-shadow: 0 8px 40px 0 rgba(168,85,247,0.25);
+        max-height: 80vh;
+        min-height: 400px;
+        height: 80vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      #chat-messages {
+        margin-top: 1.5rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        flex: 1 1 auto;
+        overflow-y: auto;
+        max-height: 60vh;
+        min-height: 200px;
       }
       @media (min-width: 768px) {
         #chat-panel {
           max-width: 900px;
           top: calc(55vh - 110px);
+          max-height: 85vh;
+          min-height: 500px;
+          height: 85vh;
+        }
+        #chat-messages {
+          max-height: 70vh;
+          min-height: 300px;
         }
       }
       .glass {
@@ -150,6 +173,112 @@
         color: #A855F7;
         border-radius: 0.25rem;
         padding: 0.1em 0.4em;
+      }
+      #chatPanel, #chatPanel * {
+        font-family: 'Space Grotesk', 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, 'sans-serif' !important;
+        font-size: 1.08rem;
+        font-weight: 500;
+        letter-spacing: 0.01em;
+        line-height: 1.7;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        color: #f3f4f6;
+      }
+      #chatPanel .markdown-body code {
+        font-family: 'JetBrains Mono', 'Fira Mono', 'Menlo', 'monospace' !important;
+        font-size: 0.98em;
+        color: #a855f7;
+        background: #23233b;
+      }
+      #chatPanel .markdown-body {
+        font-size: 1.05rem;
+        font-weight: 500;
+        color: #f3f4f6;
+      }
+      #chatPanel input, #chatPanel button {
+        font-family: 'Space Grotesk', 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, 'sans-serif' !important;
+        font-size: 1.08rem;
+        font-weight: 500;
+      }
+      #chatPanel .thinking-dots {
+        font-family: 'Space Grotesk', 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, 'sans-serif' !important;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #a855f7;
+      }
+      .bulb-anim svg ellipse {
+        filter: drop-shadow(0 0 8px #a855f7cc);
+      }
+      .thinking-dots .dot {
+        transition: opacity 0.2s;
+        opacity: 0.2;
+      }
+      #chatPanel {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        height: 90%;
+        max-width: 100%;
+        margin: 2.5rem auto 2.5rem auto;
+        margin-top: 2.5rem !important;
+        margin-bottom: 2.5rem !important;
+        padding: 0;
+        border: none;
+        border-radius: 1.5rem;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.04);
+        backdrop-filter: blur(24px);
+        box-shadow: 0 8px 40px 0 rgba(168, 85, 247, 0.25);
+      }
+      #chatPanel footer {
+        background: rgba(255,255,255,0.04);
+        border-radius: 0 0 1.5rem 1.5rem;
+        box-shadow: 0 2px 12px 0 rgba(168,85,247,0.10);
+        display: flex;
+        align-items: center;
+        justify-content: stretch;
+        width: 100%;
+        padding: 0.5rem 1.5rem 0.5rem 1.5rem;
+        box-sizing: border-box;
+        margin-top: 3.2rem;
+      }
+      #chatPanel .flex.gap-3 {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 0;
+      }
+      #message-input {
+        margin-bottom: 0 !important;
+        width: 100%;
+      }
+      #send-btn {
+        margin-bottom: 0 !important;
+        align-self: stretch;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 48px;
+        min-width: 80px;
+        font-size: 1.08rem;
+        font-weight: 600;
+        box-shadow: 0 2px 8px 0 rgba(5,160,73,0.10);
+      }
+      @media (max-width: 640px) {
+        #chatPanel {
+          margin: 1.2rem auto 1.2rem auto;
+          margin-top: 1.2rem !important;
+          margin-bottom: 1.2rem !important;
+        }
+        #chatPanel footer {
+          padding: 0.5rem 0.5rem 0.5rem 0.5rem;
+        }
+        #send-btn {
+          min-width: 60px;
+          height: 40px;
+          font-size: 1rem;
+        }
       }
     </style>
   </head>
@@ -208,24 +337,67 @@
       function bubbleTemplate(html, additional) {
         return `<div class="max-w-[75%] px-4 py-3 text-sm rounded-xl shadow-sm ${additional}">${html}</div>`;
       }
-      function addMessage(content, type = "bot") {
+      function addMessage(content, type = "bot", animate = false) {
         const log = document.getElementById("chat-messages");
         let html;
         if (type === "user") {
           html = bubbleTemplate(content, "ml-auto bg-brand/10 text-brand");
-        } else if (type === "tool") {
-          html = bubbleTemplate(`<div class='italic markdown-body'>${marked.parse(content)}</div>`, "bg-accent/10 border border-accent/30 text-accent");
-        } else {
-          html = bubbleTemplate(`<div class='markdown-body'>${marked.parse(content)}</div>`, "bg-white/10 border border-white/10 text-white");
+          log.insertAdjacentHTML("beforeend", html);
+          log.scrollTop = log.scrollHeight;
+          return;
         }
-        log.insertAdjacentHTML("beforeend", html);
+        if (!animate) {
+          if (type === "tool") {
+            html = bubbleTemplate(`<div class='italic markdown-body'>${marked.parse(content)}</div>`, "bg-accent/10 border border-accent/30 text-accent");
+          } else {
+            html = bubbleTemplate(`<div class='markdown-body'>${marked.parse(content)}</div>`, "bg-white/10 border border-white/10 text-white");
+          }
+          log.insertAdjacentHTML("beforeend", html);
+          log.scrollTop = log.scrollHeight;
+          return;
+        }
+        // Typing animation for bot/tool
+        const bubble = document.createElement("div");
+        bubble.className = `max-w-[75%] px-4 py-3 text-sm rounded-xl shadow-sm ${type === "tool" ? "bg-accent/10 border border-accent/30 text-accent italic markdown-body" : "bg-white/10 border border-white/10 text-white markdown-body"}`;
+        log.appendChild(bubble);
         log.scrollTop = log.scrollHeight;
+        let i = 0;
+        function typeChar() {
+          if (i <= content.length) {
+            // Use marked for markdown rendering if not user
+            bubble.innerHTML = marked.parse(content.slice(0, i));
+            log.scrollTop = log.scrollHeight;
+            i++;
+            setTimeout(typeChar, 12); // Adjust speed here
+          }
+        }
+        typeChar();
       }
       function addSpinner() {
         const log = document.getElementById("chat-messages");
-        const sp = `<div id="spinner-message" class="max-w-[75%] px-4 py-3 rounded-xl shadow-sm bg-white/10 border border-white/10"><div class="w-8 h-8 mx-auto border-4 border-accent/30 border-t-brand rounded-full animate-spin"></div></div>`;
+        // ChatGPT-like thinking with animated bulb and dots
+        const sp = `<div id="spinner-message" class="max-w-[75%] px-3 py-2 rounded-xl shadow-sm flex items-center gap-3 mt-2 mb-4">
+          <span class="bulb-anim" style="display:inline-flex;align-items:center;justify-content:center;width:2.2em;height:2.2em;background:rgba(168,85,247,0.12);border-radius:50%;margin-right:0.5em;">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <g>
+                <ellipse cx="14" cy="12" rx="7" ry="8" fill="#A855F7" fill-opacity="0.7">
+                  <animate attributeName="fill-opacity" values="0.7;1;0.7" dur="1.2s" repeatCount="indefinite"/>
+                </ellipse>
+                <rect x="11.5" y="20" width="5" height="4" rx="2" fill="#fff"/>
+              </g>
+            </svg>
+          </span>
+          <span class="thinking-dots text-accent text-lg font-semibold" style="letter-spacing:0.2em;display:inline-block;min-width:2em;">Thinking<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>
+        </div>`;
         log.insertAdjacentHTML("beforeend", sp);
         log.scrollTop = log.scrollHeight;
+        // Animate the dots
+        const dots = document.querySelectorAll('#spinner-message .dot');
+        let visible = 0;
+        setInterval(() => {
+          dots.forEach((d, i) => d.style.opacity = i <= visible ? '1' : '0.2');
+          visible = (visible + 1) % 3;
+        }, 400);
       }
       function removeSpinner() {
         document.getElementById("spinner-message")?.remove();
@@ -257,9 +429,9 @@
           if (chunks.length) {
             if (chunks.length > 1) {
               addMessage(chunks[0].content, "tool");
-              addMessage(chunks.at(-1).content);
+              addMessage(chunks.at(-1).content, "bot", true); // animate last chunk
             } else {
-              addMessage(chunks[0].content);
+              addMessage(chunks[0].content, "bot", true); // animate single chunk
             }
           }
         };
