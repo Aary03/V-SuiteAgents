@@ -31,19 +31,19 @@ class ChatResponse(BaseModel):
     response: str
     session_id: str
 
-@app.get("/", response_class=HTMLResponse)
-async def get_chat(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+# @app.get("/", response_class=HTMLResponse)
+# async def get_chat(request: Request):
+#     return templates.TemplateResponse("index.html", {"request": request})
 
-@app.post("/api/chat", response_model=ChatResponse)
-async def chat_endpoint(chat_request: ChatRequest):
-    run_response = valura_team.run(
-        chat_request.message,
-        session_id=chat_request.session_id
-    )
-    # run_response is a TeamRunResponse, get the string content
-    response_text = run_response.get_content_as_string() if run_response else "No response."
-    return ChatResponse(response=response_text, session_id=chat_request.session_id or "session")
+# @app.post("/api/chat", response_model=ChatResponse)
+# async def chat_endpoint(chat_request: ChatRequest):
+#     run_response = valura_team.run(
+#         chat_request.message,
+#         session_id=chat_request.session_id
+#     )
+#     # run_response is a TeamRunResponse, get the string content
+#     response_text = run_response.get_content_as_string() if run_response else "No response."
+#     return ChatResponse(response=response_text, session_id=chat_request.session_id or "session")
 
 @app.post("/api/chat/stream")
 def chat_stream_endpoint(chat_request: ChatRequest):
@@ -54,6 +54,20 @@ def chat_stream_endpoint(chat_request: ChatRequest):
             stream=True,
             stream_intermediate_steps=True
         ):
-            # Each chunk is a TeamRunResponse, serialize to JSON
-            yield f"data: {json.dumps({'content': chunk.get_content_as_string(), 'event': getattr(chunk, 'event', None)})}\n\n"
+            # Handle different types of events in the stream
+            content = None
+            event_type = getattr(chunk, 'event', None)
+            
+            # Handle different types of responses
+            if hasattr(chunk, 'get_content_as_string'):
+                content = chunk.get_content_as_string()
+            elif hasattr(chunk, 'content'):
+                content = chunk.content
+            elif isinstance(chunk, str):
+                content = chunk
+            
+            # Send the event data
+            if content is not None or event_type is not None:
+                yield f"data: {json.dumps({'content': content, 'event': event_type})}\n\n"
+                
     return StreamingResponse(event_stream(), media_type="text/event-stream") 

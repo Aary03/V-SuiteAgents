@@ -1,5 +1,5 @@
-# Use Python 3.11 slim image as base
-FROM python:3.11-slim
+# Use Python 3.11 slim image as base for AMD64
+FROM --platform=linux/amd64 python:3.11-slim
 
 # Set working directory in the container
 WORKDIR /app
