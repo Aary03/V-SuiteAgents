@@ -1,7 +1,37 @@
-agno
-openai
-yfinance
-fastapi
-uvicorn
-jinja2
-aiofiles
+# Core Framework
+fastapi>=0.104.1
+uvicorn>=0.24.0
+pydantic>=2.5.0
+
+# Template and Static File Handling
+jinja2>=3.1.2
+aiofiles>=23.2.1
+
+# CORS and Middleware
+python-multipart>=0.0.6
+
+# Database and Storage
+sqlalchemy>=2.0.23
+
+# AI and Machine Learning
+agno>=0.1.0
+openai>=1.3.0
+google-cloud-aiplatform>=1.36.0
+groq>=0.3.0
+
+# Financial Data
+yfinance>=0.2.33
+
+# Environment and Configuration
+python-dotenv>=1.0.0
+
+# Utilities
+requests>=2.31.0
+python-jose[cryptography]>=3.3.0
+typing-extensions>=4.8.0
+
+# Development Tools
+black>=23.11.0
+isort>=5.12.0
+mypy>=1.7.0
+pytest>=7.4.3
