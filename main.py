@@ -35,6 +35,10 @@ class ChatResponse(BaseModel):
 # async def get_chat(request: Request):
 #     return templates.TemplateResponse("index.html", {"request": request})
 
+@app.get("/", response_class=JSONResponse)
+async def health_check():
+    return {"status": "ok"}
+
 # @app.post("/api/chat", response_model=ChatResponse)
 # async def chat_endpoint(chat_request: ChatRequest):
 #     run_response = valura_team.run(
