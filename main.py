@@ -52,26 +52,54 @@ async def health_check():
 @app.post("/flask/api/chat/stream")
 def chat_stream_endpoint(chat_request: ChatRequest):
     def event_stream():
-        for chunk in valura_team.run(
-            chat_request.message,
-            session_id=chat_request.session_id,
-            stream=True,
-            stream_intermediate_steps=True
-        ):
-            # Handle different types of events in the stream
-            content = None
-            event_type = getattr(chunk, 'event', None)
-            
-            # Handle different types of responses
-            if hasattr(chunk, 'get_content_as_string'):
-                content = chunk.get_content_as_string()
-            elif hasattr(chunk, 'content'):
-                content = chunk.content
-            elif isinstance(chunk, str):
-                content = chunk
-            
-            # Send the event data
-            if content is not None or event_type is not None:
-                yield f"data: {json.dumps({'content': content, 'event': event_type})}\n\n"
+        try:
+            for chunk in valura_team.run(
+                chat_request.message,
+                session_id=chat_request.session_id,
+                stream=True,
+                stream_intermediate_steps=True
+            ):
+                # Skip ReasoningStep objects and other non-serializable types
+                if hasattr(chunk, '__class__') and chunk.__class__.__name__ == 'ReasoningStep':
+                    continue
                 
-    return StreamingResponse(event_stream(), media_type="text/event-stream") 
+                # Extract content and event type safely
+                content = None
+                event_type = getattr(chunk, 'event', None)
+                
+                # Handle different types of responses in order of preference
+                if hasattr(chunk, 'get_content_as_string'):
+                    content = chunk.get_content_as_string()
+                elif hasattr(chunk, 'content'):
+                    if isinstance(chunk.content, (str, int, float, bool, dict, list)):
+                        content = chunk.content
+                    else:
+                        # If content is a complex object, try to get a string representation
+                        try:
+                            content = str(chunk.content)
+                        except:
+                            continue
+                elif isinstance(chunk, (str, int, float, bool)):
+                    content = chunk
+                elif isinstance(chunk, (dict, list)):
+                    content = chunk
+                else:
+                    # Skip any other non-serializable types
+                    continue
+                
+                # Only yield if we have valid content or event type
+                if content is not None or event_type is not None:
+                    try:
+                        event_data = {'content': content, 'event': event_type}
+                        yield f"data: {json.dumps(event_data)}\n\n"
+                    except Exception as e:
+                        # If JSON serialization fails, try sending just the error
+                        error_msg = {'content': f"Error processing response: {str(e)}", 'event': 'error'}
+                        yield f"data: {json.dumps(error_msg)}\n\n"
+                        
+        except Exception as e:
+            # Handle any errors in the main streaming loop
+            error_msg = {'content': f"Streaming error: {str(e)}", 'event': 'error'}
+            yield f"data: {json.dumps(error_msg)}\n\n"
+                
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
