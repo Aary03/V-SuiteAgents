@@ -49,7 +49,7 @@ async def health_check():
 #     response_text = run_response.get_content_as_string() if run_response else "No response."
 #     return ChatResponse(response=response_text, session_id=chat_request.session_id or "session")
 
-@app.post("/api/chat/stream")
+@app.post("/flask/api/chat/stream")
 def chat_stream_endpoint(chat_request: ChatRequest):
     def event_stream():
         for chunk in valura_team.run(
