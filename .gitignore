@@ -91,3 +91,5 @@ local_settings.py
 
 tmp/
 .venv/
+
+.DS_Store
